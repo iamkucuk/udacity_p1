@@ -1,10 +1,28 @@
 from collections import deque
 import numpy as np
-from tqdm.auto import trange, tqdm
+from tqdm.notebook import trange, tqdm
 import torch
 
 
-def train_dqn(env, agent, brain_name="BananaBrain", n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=.01, eps_decay=.995):
+def train_dqn(env, agent, brain_name="BananaBrain", n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=.01,
+              eps_decay=.995, termination_threshold=13):
+    """
+    Initiates a training sequence of the model of given agent. Training will continue for given number of episodes and
+    each episode will take maximum max_t time steps. The policy will be epsilon greedy and epsilon will decay for a
+    given decay coefficient. The training will be terminated if average score of 100 episodes exceed the given
+    termination threshold. A checkpoint will be (checkpoint.pth) created/updated each time when a better score is
+    obtained or at the end of the training.
+    :param env: Unity environment
+    :param agent: Created agent instance
+    :param brain_name: Name of the brain respect to given environment
+    :param n_episodes: Number of maximum episodes
+    :param max_t: Maximum time steps per episde
+    :param eps_start: Starting value of the epsilon value
+    :param eps_end: Ending value of the epsilon value
+    :param eps_decay: Decaying factor for the epsilon value
+    :param termination_threshold: Termination threshold
+    :return: Scores over episodes
+    """
     scores = []                        # list containing scores from each episode
     scores_window = deque(maxlen=100)  # last 100 scores
     eps = eps_start                    # initialize epsilon
@@ -41,8 +59,8 @@ def train_dqn(env, agent, brain_name="BananaBrain", n_episodes=2000, max_t=1000,
 
         scores.append(score)              # save most recent score
         eps = max(eps_end, eps_decay*eps) # decrease epsilon
-        if np.mean(scores_window)>=200.0:
+        if np.mean(scores_window)>termination_threshold:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
+            agent.save_model('checkpoint.pth')
             break
     return scores
